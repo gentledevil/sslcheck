@@ -27,35 +27,33 @@
           <span class="brand">{{ admin_view.admin.name }}</span>
           {% endblock %}
           {% block main_menu %}
- <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-<span class="icon-bar"></span>
-<span class="icon-bar"></span>
-<span class="icon-bar"></span>
-</a>
-<div class="nav-collapse collapse">
-          <ul class="nav">
-            {{ layout.menu() }}
-          </ul>
-          {% endblock %}
-          {% block menu_links %}
-          <ul class="nav pull-right">
-            {{ layout.menu_links() }}
-          </ul>
-          {% endblock %}
-          {% block access_control %}
-          {% endblock %}
-</div>
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              {{ layout.menu() }}
+            </ul>
+            {% endblock %}
+            {% block menu_links %}
+            <ul class="nav pull-right">
+              {{ layout.menu_links() }}
+            </ul>
+            {% endblock %}
+            {% block access_control %}
+            {% endblock %}
+          </div>
         </div>
       </div>
 
     <div class="alert alert-info">
       <div class="btn-group pull-right">
-        <a href="https://github.com/gentledevil/sslcheck/issues" class="btn btn-default" role="button">Request a feature</a>
-        <a href="https://github.com/gentledevil/sslcheck/issues" class="btn btn-primary" role="button">Report a bug</a>
+        <a href="https://github.com/gentledevil/sslcheck/issues" class="btn btn-default" role="button">Report a bug</a>
       </div>
       <p>
-        Cet outil est en cours de développement.<br />
-        Il peut y avoir des bugs.
+        Cet outil est en cours de développement. Il peut y avoir des bugs.
       </p>
     </div>
     <div>
@@ -67,6 +65,7 @@
       {% set render_ctx = h.resolve_ctx() %}
 
       {% block body %}{% endblock %}
+    <div class="well"><p class="pull-right"><a href=https://github.com/gentledevil/sslcheck>Fork me on GitHub</a></p></div>
     </div>
     {% endblock %}
 

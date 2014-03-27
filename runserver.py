@@ -11,8 +11,8 @@ from flask.ext.admin.contrib.sqla import ModelView
 app = Flask(__name__)
 config = ConfigParser.ConfigParser()
 config.read('sslcheck.conf')
-db = config.get('Database', 'Path')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///%s' % db
+db_uri = config.get('Database', 'URI')
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 db = SQLAlchemy(app)
 
 @app.route('/')

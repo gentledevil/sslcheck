@@ -1,13 +1,12 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import argparse
 import socket
 import re
 import ConfigParser
 from datetime import datetime
-import time
-import sqlite3
+from sqlalchemy import Table, schema, select, text
+from sqlalchemy.engine import create_engine
 try:
     from OpenSSL import SSL
     PYOPENSSL = True
@@ -32,10 +31,7 @@ class Certificate:
 
 
     def check_expiration(self, asn1):
-        try:
-            self.expiration_date = datetime.strptime(asn1, "%Y%m%d%H%M%SZ")
-        except:
-            return
+        self.expiration_date = datetime.strptime(asn1, "%Y%m%d%H%M%SZ")
 
         expire_in = self.expiration_date - datetime.now()
         self.expire_days = expire_in.days
@@ -48,8 +44,8 @@ class Certificate:
         # Check the DNS name
         try:
             socket.getaddrinfo(HOST, PORT)[0][4][0]
-        except socket.gaierror as e:
-            print 'DNS problem on %s: %s.' % (HOST, e)
+        except socket.gaierror as err:
+            print 'DNS problem on %s: %s.' % (HOST, err)
             self.dns_valid = False
             return
         self.dns_valid = True
@@ -72,7 +68,7 @@ class Certificate:
             ssl_sock.do_handshake()
             self.x509 = ssl_sock.get_peer_certificate()
             ssl_sock.shutdown()
-        except SSL.Error as e:
+        except SSL.Error:
             print 'Certificate validation failed on %s.' % HOST
             self.cert_valid = False
 
@@ -85,13 +81,13 @@ class Certificate:
         if not self.x509:
             return
         x509name = self.x509.get_subject()
-        CN = x509name.commonName
-        splitCN = re.match(r'^([^.]+)\.(.*)$', CN)
-        CNdomain = splitCN.group(2)
-        CNsubdomain = splitCN.group(1)
-        HOSTdomain = re.match(r'^[^.]+\.(.*)$', HOST).group(1)
-        if CN != HOST and not (CNsubdomain == '*' and CNdomain == HOSTdomain):
-            print 'Hostname %s does not match certificate CN %s.' \
+        cn = x509name.commonName
+        split_cn = re.match(r'^([^.]+)\.(.*)$', cn)
+        cn_domain = split_cn.group(2)
+        cn_subdomain = split_cn.group(1)
+        host_domain = re.match(r'^[^.]+\.(.*)$', HOST).group(1)
+        if cn != HOST and not (cn_subdomain == '*' and cn_domain == host_domain):
+            print 'Hostname %s does not match certificate cn %s.' \
             % (HOST, x509name.commonName)
             self.certname_match = False
         else:
@@ -100,36 +96,31 @@ class Certificate:
 if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
     config.read('sslcheck.conf')
-    db = config.get('Database', 'Path')
+    db_uri = config.get('Database', 'URI')
     CA_CERTS = config.get('SSL', 'CACerts')
-    con = None
-    try:
-        con = sqlite3.connect(db)
-        con.row_factory = sqlite3.Row
-        cur = con.cursor()
-    except sqlite3.Error, e:
-        print "Error: %s" % e.args[0]
-        exit(1)
 
-    cur.execute('SELECT host.id, host.hostname, protocol.port \
-                FROM host, protocol \
-                WHERE host.protocol_id = protocol.id \
-                AND host.ignore != 1')
+    engine = create_engine(db_uri)
+    connection = engine.connect()
+    metadata = schema.MetaData(engine)
+    thost = Table("host", metadata, autoload=True)
+    tprotocol = Table("protocol", metadata, autoload=True)
+
     global HOST, PORT
-    for host in cur.fetchall():
-        host_id = host['id']
+    select = select([thost, tprotocol]).where(thost.c.protocol_id == tprotocol.c.id)
+    for host in connection.execute(select):
+        host_id = host[0]
         HOST = str(host['hostname'])
         PORT = int(host['port'])
         cert = Certificate()
         cert.check_dns()
         cert.check_ssl()
         cert.check_certname()
-        cur.execute('UPDATE host \
-                    SET expire_days=?, cert_valid=?, certname_match=?, \
-                    dns_valid=?, expiration_date=?, last_check_date=? \
-                    WHERE id=?',
-                    (cert.expire_days, cert.cert_valid, cert.certname_match,
-                    cert.dns_valid, cert.expiration_date, datetime.now(), host_id))
-        con.commit()
-    if con:
-        con.close()
+        update = text('UPDATE host \
+                     SET expire_days=:ed, cert_valid=:cv, certname_match=:cm, \
+                     dns_valid=:dv, expiration_date=:edt, last_check_date=:lcd \
+                     WHERE id=:id')
+        connection.execute(update, ed=cert.expire_days, cv=cert.cert_valid,
+                      cm=cert.certname_match, dv=cert.dns_valid,
+                      edt=cert.expiration_date, lcd=datetime.now(), id=host_id)
+
+    connection.close()
