@@ -54,8 +54,12 @@ class Certificate:
         # Connect to the host and get the certificate
         if self.dns_valid == False:
             return
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((HOST, PORT))
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((HOST, PORT))
+        except socket.error as err:
+            print 'Unable to reach server %s: %s.' % (HOST, err)
+            self.cert_valid = False
 
         try:
             ctx = SSL.Context(SSL.TLSv1_METHOD)
