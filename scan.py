@@ -15,7 +15,9 @@ except ImportError:
     exit(1)
 
 class Certificate:
-    def __init__(self):
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
         self.x509 = None
         self.expiration_date = None
         self.expire_days = None
@@ -36,16 +38,16 @@ class Certificate:
         expire_in = self.expiration_date - datetime.now()
         self.expire_days = expire_in.days
         if 0 < self.expire_days < 30:
-            print 'Warning: Certificate for %s expires in %d days.' % (HOST, self.expire_days)
+            print 'Warning: Certificate for %s expires in %d days.' % (self.host, self.expire_days)
         if self.expire_days < 0:
-            print 'Certificate for %s has expired %d days ago.' % (HOST, -self.expire_days)
+            print 'Certificate for %s has expired %d days ago.' % (self.host, -self.expire_days)
 
     def check_dns(self):
         # Check the DNS name
         try:
-            socket.getaddrinfo(HOST, PORT)[0][4][0]
+            socket.getaddrinfo(self.host, self.port)[0][4][0]
         except socket.gaierror as err:
-            print 'DNS problem on %s: %s.' % (HOST, err)
+            print 'DNS problem on %s: %s.' % (self.host, err)
             self.dns_valid = False
             return
         self.dns_valid = True
@@ -56,9 +58,9 @@ class Certificate:
             return
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((HOST, PORT))
+            sock.connect((self.host, self.port))
         except socket.error as err:
-            print 'Unable to reach server %s: %s.' % (HOST, err)
+            print 'Unable to reach server %s: %s.' % (self.host, err)
             self.cert_valid = False
 
         try:
@@ -68,12 +70,12 @@ class Certificate:
             ctx.load_verify_locations(CA_CERTS)
             ssl_sock = SSL.Connection(ctx, sock)
             ssl_sock.set_connect_state()
-            ssl_sock.set_tlsext_host_name(HOST)
+            ssl_sock.set_tlsext_host_name(self.host)
             ssl_sock.do_handshake()
             self.x509 = ssl_sock.get_peer_certificate()
             ssl_sock.shutdown()
         except SSL.Error:
-            print 'Certificate validation failed on %s.' % HOST
+            print 'Certificate validation failed on %s.' % self.host
             self.cert_valid = False
 
         if self.cert_valid != False:
@@ -89,10 +91,10 @@ class Certificate:
         split_cn = re.match(r'^([^.]+)\.(.*)$', cn)
         cn_domain = split_cn.group(2)
         cn_subdomain = split_cn.group(1)
-        host_domain = re.match(r'^[^.]+\.(.*)$', HOST).group(1)
-        if cn != HOST and not (cn_subdomain == '*' and cn_domain == host_domain):
+        host_domain = re.match(r'^[^.]+\.(.*)$', self.host).group(1)
+        if cn != self.host and not (cn_subdomain == '*' and cn_domain == host_domain):
             print 'Hostname %s does not match certificate cn %s.' \
-            % (HOST, x509name.commonName)
+            % (self.host, x509name.commonName)
             self.certname_match = False
         else:
             self.certname_match = True
@@ -109,13 +111,12 @@ if __name__ == "__main__":
     thost = Table("host", metadata, autoload=True)
     tprotocol = Table("protocol", metadata, autoload=True)
 
-    global HOST, PORT
     select = select([thost, tprotocol]).where(thost.c.protocol_id == tprotocol.c.id)
     for host in connection.execute(select):
         host_id = host[0]
-        HOST = str(host['hostname'])
-        PORT = int(host['port'])
-        cert = Certificate()
+        hostname = str(host['hostname'])
+        port = int(host['port'])
+        cert = Certificate(hostname, port)
         cert.check_dns()
         cert.check_ssl()
         cert.check_certname()
