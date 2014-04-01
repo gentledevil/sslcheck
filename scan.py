@@ -9,7 +9,6 @@ from sqlalchemy import Table, schema, select, text
 from sqlalchemy.engine import create_engine
 try:
     from OpenSSL import SSL
-    PYOPENSSL = True
 except ImportError:
     print 'You need pyOpenSSL for this script to work'
     exit(1)
@@ -24,6 +23,8 @@ class Certificate:
         self.cert_valid = None
         self.certname_match = None
         self.dns_valid = None
+        self.net_ok = None
+        self.cn = None
 
     def check_callback(self, connection, x509, errnum, errdepth, ok):
         self.check_expiration(x509.get_notAfter())
@@ -59,8 +60,10 @@ class Certificate:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.host, self.port))
+            self.net_ok = True
         except socket.error as err:
             print 'Unable to reach server %s: %s.' % (self.host, err)
+            self.net_ok = False
             self.cert_valid = False
 
         try:
@@ -87,17 +90,30 @@ class Certificate:
         if not self.x509:
             return
         x509name = self.x509.get_subject()
-        cn = x509name.commonName
-        split_cn = re.match(r'^([^.]+)\.(.*)$', cn)
+        self.cn = x509name.commonName
+        split_cn = re.match(r'^([^.]+)\.(.*)$', self.cn)
         cn_domain = split_cn.group(2)
         cn_subdomain = split_cn.group(1)
         host_domain = re.match(r'^[^.]+\.(.*)$', self.host).group(1)
-        if cn != self.host and not (cn_subdomain == '*' and cn_domain == host_domain):
+        if self.cn != self.host and not (cn_subdomain == '*' and cn_domain == host_domain):
             print 'Hostname %s does not match certificate cn %s.' \
             % (self.host, x509name.commonName)
             self.certname_match = False
         else:
             self.certname_match = True
+
+    def get_hostname_from_cn(self):
+        host_ip = None
+        cn_ip = None
+        try:
+            host_ip = socket.getaddrinfo(self.host, self.port)[0][4][0]
+            cn_ip = socket.getaddrinfo(self.cn, self.port)[0][4][0]
+        except: pass
+        if self.host != self.cn and host_ip == cn_ip and host_ip != None:
+            print 'Replacing %s (%s) with %s (%s)' \
+            %(self.host, host_ip, self.cn, cn_ip)
+            self.host = self.cn
+        
 
 if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
@@ -120,12 +136,15 @@ if __name__ == "__main__":
         cert.check_dns()
         cert.check_ssl()
         cert.check_certname()
+        cert.get_hostname_from_cn()
         update = text('UPDATE host \
-                     SET expire_days=:ed, cert_valid=:cv, certname_match=:cm, \
-                     dns_valid=:dv, expiration_date=:edt, last_check_date=:lcd \
+                     SET hostname=:h, commonname=:cn, expire_days=:ed, \
+                     cert_valid=:cv, certname_match=:cm, dns_valid=:dv, \
+                     net_ok=:no, expiration_date=:edt, last_check_date=:lcd \
                      WHERE id=:id')
-        connection.execute(update, ed=cert.expire_days, cv=cert.cert_valid,
-                      cm=cert.certname_match, dv=cert.dns_valid,
+        connection.execute(update, h=cert.host, cn=cert.cn,
+                      ed=cert.expire_days, cv=cert.cert_valid,
+                      no=cert.net_ok, cm=cert.certname_match, dv=cert.dns_valid,
                       edt=cert.expiration_date, lcd=datetime.now(), id=host_id)
 
     connection.close()

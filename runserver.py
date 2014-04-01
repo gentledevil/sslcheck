@@ -22,7 +22,9 @@ def index():
 class Host(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(255))
+    commonname = db.Column(db.String(255))
     dns_valid = db.Column(db.Boolean)
+    net_ok = db.Column(db.Boolean)
     cert_valid = db.Column(db.Boolean)
     certname_match = db.Column(db.Boolean)
     expire_days = db.Column(db.Integer)
