@@ -11,6 +11,8 @@ from flask.ext.admin.contrib.sqla import ModelView
 app = Flask(__name__)
 config = ConfigParser.ConfigParser()
 config.read('sslcheck.conf')
+app.secret_key = config.get('Flask', 'SecretKey')
+app.config['DEBUG'] = config.get('Flask', 'Debug')
 db_uri = config.get('Database', 'URI')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 db = SQLAlchemy(app)
