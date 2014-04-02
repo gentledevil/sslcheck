@@ -117,6 +117,8 @@ class Certificate:
             self.host = self.cn
 
     def check_revocation(self):
+        if self.x509 == None:
+            return
         ext_nb = self.x509.get_extension_count()
         for ext_in in range(0, ext_nb):
             ext = self.x509.get_extension(ext_in)
