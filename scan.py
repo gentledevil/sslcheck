@@ -5,10 +5,11 @@ import socket
 import re
 import ConfigParser
 from datetime import datetime
+import urllib
 from sqlalchemy import Table, schema, select, text
 from sqlalchemy.engine import create_engine
 try:
-    from OpenSSL import SSL
+    from OpenSSL import SSL, crypto
 except ImportError:
     print 'You need pyOpenSSL for this script to work'
     exit(1)
@@ -25,6 +26,7 @@ class Certificate:
         self.dns_valid = None
         self.net_ok = None
         self.cn = None
+        self.revoked = None
 
     def check_callback(self, connection, x509, errnum, errdepth, ok):
         self.check_expiration(x509.get_notAfter())
@@ -113,7 +115,24 @@ class Certificate:
             print 'Replacing %s (%s) with %s (%s)' \
             %(self.host, host_ip, self.cn, cn_ip)
             self.host = self.cn
-        
+
+    def check_revocation(self):
+        ext_nb = self.x509.get_extension_count()
+        for ext_in in range(0, ext_nb):
+            ext = self.x509.get_extension(ext_in)
+            if ext.get_short_name() == 'crlDistributionPoints':
+                url = re.match('.*(http.*crl)', ext.get_data()).group(1)
+        if url == None:
+            return
+        crl_file = urllib.urlretrieve(url)[0]
+        crl = crypto.load_crl(crypto.FILETYPE_ASN1, open(crl_file).read())
+        serial = hex(self.x509.get_serial_number())[2:][:-1].upper()
+        for revoked in crl.get_revoked():
+            if serial == revoked.get_serial():
+                self.revoked = True
+                print 'Certificate %s with serial %s has been revoked!' \
+                %(self.cn, serial)
+                return
 
 if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
@@ -136,15 +155,18 @@ if __name__ == "__main__":
         cert.check_dns()
         cert.check_ssl()
         cert.check_certname()
+        cert.check_revocation()
         cert.get_hostname_from_cn()
         update = text('UPDATE host \
                      SET hostname=:h, commonname=:cn, expire_days=:ed, \
-                     cert_valid=:cv, certname_match=:cm, dns_valid=:dv, \
-                     net_ok=:no, expiration_date=:edt, last_check_date=:lcd \
+                     cert_valid=:cv, certname_match=:cm, revoked=:rv, \
+                     dns_valid=:dv, net_ok=:no, expiration_date=:edt, \
+                     last_check_date=:lcd \
                      WHERE id=:id')
         connection.execute(update, h=cert.host, cn=cert.cn,
                       ed=cert.expire_days, cv=cert.cert_valid,
-                      no=cert.net_ok, cm=cert.certname_match, dv=cert.dns_valid,
-                      edt=cert.expiration_date, lcd=datetime.now(), id=host_id)
+                      no=cert.net_ok, cm=cert.certname_match, rv=cert.revoked,
+                      dv=cert.dns_valid, edt=cert.expiration_date,
+                      lcd=datetime.now(), id=host_id)
 
     connection.close()

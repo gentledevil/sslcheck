@@ -31,6 +31,7 @@ class Host(db.Model):
     certname_match = db.Column(db.Boolean)
     expire_days = db.Column(db.Integer)
     expiration_date = db.Column(db.DateTime)
+    revoked = db.Column(db.Boolean)
     last_check_date = db.Column(db.DateTime)
     ignore = db.Column(db.Boolean)
     protocol_id = db.Column(db.Integer, db.ForeignKey('protocol.id'))
