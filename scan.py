@@ -14,6 +14,8 @@ except ImportError:
     print 'You need pyOpenSSL for this script to work'
     exit(1)
 
+import heartbleed
+
 class Certificate:
     def __init__(self, host, port):
         self.host = host
@@ -27,6 +29,7 @@ class Certificate:
         self.net_ok = None
         self.cn = None
         self.revoked = None
+        self.heartbleed_vulnerable = None
 
     def check_callback(self, connection, x509, errnum, errdepth, ok):
         self.check_expiration(x509.get_notAfter())
@@ -136,6 +139,11 @@ class Certificate:
                 %(self.cn, serial)
                 return
 
+    def check_heartbleed(self):
+        if heartbleed.is_vulnerable('%s:%s' %(self.host, self.port)):
+            self.heartbleed_vulnerable = True
+            print 'Heartbleed vulnerability is present on %s.' % self.host
+
 if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
     config.read('sslcheck.conf')
@@ -158,6 +166,7 @@ if __name__ == "__main__":
         cert.check_ssl()
         cert.check_certname()
         cert.check_revocation()
+        cert.check_heartbleed()
         cert.get_hostname_from_cn()
         update = text('UPDATE host \
                      SET hostname=:h, commonname=:cn, expire_days=:ed, \
