@@ -172,12 +172,13 @@ if __name__ == "__main__":
                      SET hostname=:h, commonname=:cn, expire_days=:ed, \
                      cert_valid=:cv, certname_match=:cm, revoked=:rv, \
                      dns_valid=:dv, net_ok=:no, expiration_date=:edt, \
-                     last_check_date=:lcd \
+                     heartbleed=:hb, last_check_date=:lcd \
                      WHERE id=:id')
         connection.execute(update, h=cert.host, cn=cert.cn,
                       ed=cert.expire_days, cv=cert.cert_valid,
                       no=cert.net_ok, cm=cert.certname_match, rv=cert.revoked,
                       dv=cert.dns_valid, edt=cert.expiration_date,
-                      lcd=datetime.now(), id=host_id)
+                      hb=cert.heartbleed_vulnerable, lcd=datetime.now(),
+                      id=host_id)
 
     connection.close()
