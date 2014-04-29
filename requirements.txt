@@ -1,0 +1,6 @@
+Flask==0.10.1
+Flask-Admin==1.0.7
+Flask-SQLAlchemy==1.0
+Jinja2==2.7.2
+SQLAlchemy==0.9.3
+pyOpenSSL==0.14
