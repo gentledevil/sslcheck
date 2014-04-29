@@ -4,6 +4,7 @@
 import socket
 import re
 import ConfigParser
+import logging, logging.config
 from datetime import datetime
 import urllib
 from sqlalchemy import Table, schema, select, text
@@ -44,16 +45,16 @@ class Certificate:
         expire_in = self.expiration_date - datetime.now()
         self.expire_days = expire_in.days
         if 0 < self.expire_days < 30:
-            print 'Warning: Certificate for %s expires in %d days.' % (self.host, self.expire_days)
+            logger.warning('Certificate for %s expires in %d days.' % (self.host, self.expire_days))
         if self.expire_days < 0:
-            print 'Certificate for %s has expired %d days ago.' % (self.host, -self.expire_days)
+            logger.error('Certificate for %s has expired %d days ago.' % (self.host, -self.expire_days))
 
     def check_dns(self):
         # Check the DNS name
         try:
             socket.getaddrinfo(self.host, self.port)[0][4][0]
         except socket.gaierror as err:
-            print 'DNS problem on %s: %s.' % (self.host, err)
+            logger.error('DNS problem on %s: %s.' % (self.host, err))
             self.dns_valid = False
             return
         self.dns_valid = True
@@ -67,7 +68,7 @@ class Certificate:
             sock.connect((self.host, self.port))
             self.net_ok = True
         except socket.error as err:
-            print 'Unable to reach server %s: %s.' % (self.host, err)
+            logger.error('Unable to reach server %s: %s.' % (self.host, err))
             self.net_ok = False
             self.cert_valid = False
 
@@ -83,7 +84,7 @@ class Certificate:
             self.x509 = ssl_sock.get_peer_certificate()
             ssl_sock.shutdown()
         except SSL.Error:
-            print 'Certificate validation failed on %s.' % self.host
+            logger.error('Certificate validation failed on %s.' % self.host)
             self.cert_valid = False
 
         if self.cert_valid != False:
@@ -101,8 +102,8 @@ class Certificate:
         cn_subdomain = split_cn.group(1)
         host_domain = re.match(r'^[^.]+\.(.*)$', self.host).group(1)
         if self.cn != self.host and not (cn_subdomain == '*' and cn_domain == host_domain):
-            print 'Hostname %s does not match certificate cn %s.' \
-            % (self.host, x509name.commonName)
+            logger.error('Hostname %s does not match certificate cn %s.' \
+            % (self.host, x509name.commonName))
             self.certname_match = False
         else:
             self.certname_match = True
@@ -115,8 +116,8 @@ class Certificate:
             cn_ip = socket.getaddrinfo(self.cn, self.port)[0][4][0]
         except: pass
         if self.host != self.cn and host_ip == cn_ip and host_ip != None:
-            print 'Replacing %s (%s) with %s (%s)' \
-            %(self.host, host_ip, self.cn, cn_ip)
+            logger.info('Replacing %s (%s) with %s (%s)' \
+            %(self.host, host_ip, self.cn, cn_ip))
             self.host = self.cn
 
     def check_revocation(self):
@@ -135,18 +136,20 @@ class Certificate:
         for revoked in crl.get_revoked():
             if serial == revoked.get_serial():
                 self.revoked = True
-                print 'Certificate %s with serial %s has been revoked!' \
-                %(self.cn, serial)
+                logger.error('Certificate %s with serial %s has been revoked!' \
+                %(self.cn, serial))
                 return
 
     def check_heartbleed(self):
         if heartbleed.is_vulnerable('%s:%s' %(self.host, self.port)):
             self.heartbleed_vulnerable = True
-            print 'Heartbleed vulnerability is present on %s.' % self.host
+            logger.error('Heartbleed vulnerability is present on %s.' % self.host)
 
 if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
     config.read('sslcheck.conf')
+    logging.config.fileConfig('logging.conf')
+    logger = logging.getLogger('sslcheck')
     db_uri = config.get('Database', 'URI')
     CA_CERTS = config.get('SSL', 'CACerts')
 
