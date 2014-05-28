@@ -7,6 +7,7 @@ from flask import Flask, redirect
 from flask.ext.admin import Admin, BaseView, expose
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.admin.contrib.sqla import ModelView
+from flask.ext.admin.base import MenuLink
 import pygal
 from pygal.style import DefaultStyle
 
@@ -68,6 +69,11 @@ class ChartsView(BaseView):
     @expose('/')
     def index(self):
         return self.render('charts.html')
+
+class HelpView(BaseView):
+    @expose('/')
+    def index(self):
+        return self.render('help.html')
 
 @app.route('/')
 def index():
@@ -204,8 +210,9 @@ def plot_history():
     return data, 200, header
 
 admin = Admin(app, name='SSLCheck')
-admin.add_view(ModelView(Host, db.session))
+admin.add_view(ModelView(Host, db.session, name='Hosts'))
 admin.add_view(ChartsView(name='Charts'))
+admin.add_view(HelpView(name='Aide'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

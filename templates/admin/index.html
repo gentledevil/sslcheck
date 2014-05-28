@@ -1,5 +1,15 @@
 {% extends 'admin/master.html' %}
 {% block body %}
+    <div class="alert alert-info">
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+      <div class="btn-group pull-right">
+        <a href="https://github.com/gentledevil/sslcheck/issues" class="btn btn-default" role="button">Rapporter un bug</a>
+      </div>
+      <p>
+        Cet outil est en cours de développement. Il peut y avoir des bugs.
+      </p>
+    </div>
+    <div>
 <div class="hero-unit">
   <h1>Bienvenue sur SSLCheck.</h1>
   <br />
@@ -42,19 +52,5 @@
     <div class="span1"></div>
     </div>
   </div>
-  <h2>Comment ça marche ?</h2>
-  <ul>
-    <li>Lors de la mise en place d'un certificat SSL, l'ajouter à la liste des hosts à checker</li>
-    <li>Les certificats présents dans la base sont régulièrement checkés par un cron</li>
-    <li>Des alertes sont envoyés par mail lorsque des certificats invalides sont détectés</li>
-    <li>Il est possible d'ignorer un certificat lors des checks et dans ce cas remplir la base manuellement</li>
-  </ul>
-  <h2>Que signifient les différents tests ?</h2>
-  <ul>
-    <li>DNS valid / Net OK : Le hostname de la machine est-il résolvable, la machine est-elle joignable sur le port indiqué ?</li>
-    <li>Cert valid : le certificat est-il correctement formé (chaîne de certification, ...)</li>
-    <li>Certname match : le CN du certificat correspond-il au hostname de la machine ?</li>
-    <li>Revoked : le serial du certificat apparait-il dans la liste de révocation (CRL) associée ?</li>
-  </ul>
 </div>
 {% endblock %}
