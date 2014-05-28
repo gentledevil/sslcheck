@@ -145,6 +145,23 @@ class Certificate:
             self.heartbleed_vulnerable = True
             logger.error('Heartbleed vulnerability is present on %s.' % self.host)
 
+def average(result):
+    sum = 0
+    empty = 0
+    for e in result:
+        if e.values()[0] != None:
+            sum += e.values()[0]
+        else:
+            empty += 1
+    return float(sum - empty)/len(result)
+
+def true_percentage(result):
+    sum = 0
+    for e in result:
+        if e.values()[0] == 1:
+            sum += 1
+    return float(sum)/len(result)*100
+
 if __name__ == "__main__":
     config = ConfigParser.ConfigParser()
     config.read('sslcheck.conf')
@@ -183,5 +200,30 @@ if __name__ == "__main__":
                       dv=cert.dns_valid, edt=cert.expiration_date,
                       hb=cert.heartbleed_vulnerable, lcd=datetime.now(),
                       id=host_id)
+
+    result = connection.execute(text('SELECT dns_valid FROM host'))
+    dns_valid_percent = true_percentage(result.fetchall())
+    result = connection.execute(text('SELECT net_ok FROM host'))
+    net_ok_percent = true_percentage(result.fetchall())
+    result = connection.execute(text('SELECT cert_valid FROM host'))
+    cert_valid_percent = true_percentage(result.fetchall())
+    result = connection.execute(text('SELECT certname_match FROM host'))
+    certname_match_percent = true_percentage(result.fetchall())
+    result = connection.execute(text('SELECT expire_days FROM host'))
+    expire_days_average = average(result.fetchall())
+    result = connection.execute(text('SELECT revoked FROM host'))
+    not_revoked_percent = 100 - true_percentage(result.fetchall())
+    result = connection.execute(text('SELECT heartbleed FROM host'))
+    heartbleed_clear_percent = 100 - true_percentage(result.fetchall())
+    date = datetime.now()
+    insert = text('INSERT INTO history (dns_valid_percent, net_ok_percent, \
+                 cert_valid_percent, certname_match_percent, \
+                 expire_days_average, revoked_percent, heartbleed_percent, \
+                 date) \
+                 VALUES (:dn, :n, :cv, :cn, :e, :r, :h, :d)')
+    connection.execute(insert, dn=dns_valid_percent, n=net_ok_percent, \
+                 cv=cert_valid_percent, cn=certname_match_percent, \
+                 e=expire_days_average, r=not_revoked_percent, \
+                 h=heartbleed_clear_percent, d=date)
 
     connection.close()

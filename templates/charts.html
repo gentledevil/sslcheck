@@ -1,0 +1,52 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+  <style type="text/css">
+    .sidebar-nav-fixed {
+         position:fixed;
+         top:150px;
+         width:10%;
+     }
+    
+     @media (max-width: 767px) {
+         .sidebar-nav-fixed {
+             width:auto;
+         }
+     }
+    
+     @media (max-width: 979px) {
+         .sidebar-nav-fixed {
+             position:static;
+            width: auto;
+         }
+     }
+  </style>
+<div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span2">
+      <ul class="nav nav-list sidebar-nav-fixed">
+        <li class="nav-header">Graphes</li>
+        <li><a href="#crt">Certificats</a></li>
+        <li><a href="#err">Erreurs</a></li>
+        <li><a href="#vul">Vulnérabilités</a></li>
+        <li><a href="#exp">Expiration</a></li>
+        <li><a href="#hst">History</a></li>
+      </ul>
+    </div>
+    <div class="span1"></div>
+    <div class="span9">
+      <div>
+        <h2 id="crt">Certificats</h2>
+        <img src="/certs.png" />
+        <h2 id="err">Erreurs</h2>
+        <img src="/errors.png" />
+        <h2 id="vul">Vulnérabilités</h2>
+        <img src="/vulnerabilities.png" />
+        <h2 id="exp">Expiration</h2>
+        <img src="/expiration.png" />
+        <h2 id="hst">History</h2>
+        <img src="/history.png" />
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
