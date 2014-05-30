@@ -79,7 +79,7 @@ class HelpView(BaseView):
 def index():
     return redirect('/admin')
 
-@app.route('/certs.png')
+@app.route('/certs.svg')
 def plot_certs():
     cert_valid = Host.query.filter_by(cert_valid = True).count()
     cert_invalid = Host.query.filter_by(cert_valid = False).count()
@@ -89,16 +89,16 @@ def plot_certs():
     pie_chart.add('Valid', cert_valid)
     pie_chart.add('Invalid', cert_invalid)
     pie_chart.render()
-    pie_chart.render_to_png('tmp/certs.png')
+    pie_chart.render_to_file('tmp/certs.svg')
 
-    header = {'Content-type': 'image/png'}
-    f = open('tmp/certs.png')
+    header = {'Content-type': 'image/svg+xml'}
+    f = open('tmp/certs.svg')
     f.seek(0)
     data = f.read()
 
     return data, 200, header
 
-@app.route('/errors.png')
+@app.route('/errors.svg')
 def plot_errors():
     dns_invalid = Host.query.filter_by(dns_valid = False).count()
     net_nok = Host.query.filter_by(net_ok = False).count()
@@ -112,16 +112,16 @@ def plot_errors():
     bar_chart.add('Expired', expired)
     bar_chart.add('Wrong CN', wrong_cn)
     bar_chart.render()
-    bar_chart.render_to_png('tmp/errors.png')
+    bar_chart.render_to_file('tmp/errors.svg')
 
-    header = {'Content-type': 'image/png'}
-    f = open('tmp/errors.png')
+    header = {'Content-type': 'image/svg+xml'}
+    f = open('tmp/errors.svg')
     f.seek(0)
     data = f.read()
 
     return data, 200, header
 
-@app.route('/vulnerabilities.png')
+@app.route('/vulnerabilities.svg')
 def plot_vulnerabilities():
     revoked = Host.query.filter_by(revoked = True).count()
     heartbleed = Host.query.filter_by(heartbleed = True).count()
@@ -131,16 +131,16 @@ def plot_vulnerabilities():
     bar_chart.add('Revoked', revoked)
     bar_chart.add('Heartbleed', heartbleed)
     bar_chart.render()
-    bar_chart.render_to_png('tmp/vulnerabilities.png')
+    bar_chart.render_to_file('tmp/vulnerabilities.svg')
 
-    header = {'Content-type': 'image/png'}
-    f = open('tmp/vulnerabilities.png')
+    header = {'Content-type': 'image/svg+xml'}
+    f = open('tmp/vulnerabilities.svg')
     f.seek(0)
     data = f.read()
 
     return data, 200, header
 
-@app.route('/expiration.png')
+@app.route('/expiration.svg')
 def plot_expiration():
     expired = Host.query.filter(Host.expire_days <= 0).count()
     expires_1m = Host.query.filter(Host.expire_days >= 0).filter(Host.expire_days <= 30).count()
@@ -162,16 +162,16 @@ def plot_expiration():
     bar_chart.add('10 years', expires_10y)
     bar_chart.add('Later', expires_later)
     bar_chart.render()
-    bar_chart.render_to_png('tmp/expiration.png')
+    bar_chart.render_to_file('tmp/expiration.svg')
 
-    header = {'Content-type': 'image/png'}
-    f = open('tmp/expiration.png')
+    header = {'Content-type': 'image/svg+xml'}
+    f = open('tmp/expiration.svg')
     f.seek(0)
     data = f.read()
 
     return data, 200, header
 
-@app.route('/history.png')
+@app.route('/history.svg')
 def plot_history():
     date = []
     dns_valid_percent = []
@@ -189,21 +189,21 @@ def plot_history():
         revoked_percent.append(row.certname_match_percent)
         heartbleed_percent.append(row.certname_match_percent)
 
-    line_chart = pygal.Line(style=MyStyle, human_readable=True, fill=True, \
+    line_chart = pygal.Line(style=MyStyle, human_readable=True, \
                             x_title='Week', y_title='Certificates (in %)')
     line_chart.x_labels = date
     line_chart.add('DNS valid', dns_valid_percent)
     line_chart.add('Network OK', net_ok_percent)
     line_chart.add('Valid', cert_valid_percent)
     line_chart.add('CN match', certname_match_percent)
-    line_chart.add('Revoked', certname_match_percent)
-    line_chart.add('Heartbleed', certname_match_percent)
+    #line_chart.add('Revoked', certname_match_percent)
+    #line_chart.add('Heartbleed', certname_match_percent)
 
     line_chart.render()
-    line_chart.render_to_png('tmp/history.png')
+    line_chart.render_to_file('tmp/history.svg')
 
-    header = {'Content-type': 'image/png'}
-    f = open('tmp/history.png')
+    header = {'Content-type': 'image/svg+xml'}
+    f = open('tmp/history.svg')
     f.seek(0)
     data = f.read()
 
@@ -212,7 +212,7 @@ def plot_history():
 admin = Admin(app, name='SSLCheck')
 admin.add_view(ModelView(Host, db.session, name='Hosts'))
 admin.add_view(ChartsView(name='Charts'))
-admin.add_view(HelpView(name='Aide'))
+#admin.add_view(HelpView(name='Aide'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
