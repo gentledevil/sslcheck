@@ -1,7 +1,7 @@
 {% extends 'admin/master.html' %}
 {% block body %}
 <div>
-  <img src="/static/img/one-does-not-simply.jpg" class="img-rounded carousel-img">
+<!--  <img src="/static/img/one-does-not-simply.jpg" class="img-rounded carousel-img">-->
   <h2>Comment ça marche ?</h2>
   <ul>
     <li>Lors de la mise en place d'un certificat SSL, l'ajouter à la liste des hosts à checker</li>
@@ -14,7 +14,14 @@
     <li>DNS valid / Net OK : Le hostname de la machine est-il résolvable, la machine est-elle joignable sur le port indiqué ?</li>
     <li>Cert valid : le certificat est-il correctement formé (chaîne de certification, ...)</li>
     <li>Certname match : le CN du certificat correspond-il au hostname de la machine ?</li>
+    <li>Expire days/Expiration date : quand le certificat va-t-il expirer ?</li>
     <li>Revoked : le serial du certificat apparait-il dans la liste de révocation (CRL) associée ?</li>
+    <li>Heartbleed : le serveur est-il vulnérable à la faille heartbleed ?</li>
+    <div class="alert alert-warning">
+      <p>
+        Les checks sont dépendants les uns des autres. Si par exemple le certificat n'est pas valide, le check sur la date d'expiration n'aura pas lieu.
+      </p>
+    </div>
   </ul>
 </div>
 {% endblock %}
