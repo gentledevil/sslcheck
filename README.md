@@ -1,8 +1,22 @@
 ## Description ##
-SSLCheck is a tool to massively check SSL certificates validity.
+SSLCheck is a tool to check and report on SSL certificates validity. Give it a list of hosts and ports through the Web UI and it will produce alerts, charts and logs about which certificates are not properly setup, vulnerables or expire soon.
+
 It comes in two parts :
  - `scan.py` is the script that scan the certificates and populates the DB
  - `runserver.py` provides the Web UI
+
+## Features ##
+
+It currently reports on :
+ - network/DNS error while trying to reach hosts
+ - Common Names which do not match hostnames
+ - invalid/incomplete certificate chain
+ - vulnerability to Heartbleed (probably not useful anymore)
+ - soon to expire or expired certificates
+ - revoked certificates
+ - evolution over time of the number of certificates that are valid/invalid
+
+ ![One does not simply forget to renew the certificate](static/img/one-does-not-simply.jpg)
 
 ## Installation ##
 
@@ -11,6 +25,8 @@ Install dependencies using pip :
     pip install -r requirements.txt
 
 then edit `sslcheck.conf` with the connection string to your DB and the path to your certificates CA store.
+
+See [SQLAlchemy documentation][2] for the DB connection string syntax and available backends.
 If not using SQLite you may need to install appropriate modules for your database.
 
 Then run :

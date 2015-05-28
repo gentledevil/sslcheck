@@ -196,8 +196,8 @@ def plot_history():
     line_chart.add('Network OK', net_ok_percent)
     line_chart.add('Valid', cert_valid_percent)
     line_chart.add('CN match', certname_match_percent)
-    #line_chart.add('Revoked', certname_match_percent)
-    #line_chart.add('Heartbleed', certname_match_percent)
+    line_chart.add('Revoked', certname_match_percent)
+    line_chart.add('Heartbleed', certname_match_percent)
 
     line_chart.render()
     line_chart.render_to_file('tmp/history.svg')
@@ -211,8 +211,10 @@ def plot_history():
 
 admin = Admin(app, name='SSLCheck')
 admin.add_view(ModelView(Host, db.session, name='Hosts'))
+admin.add_view(ModelView(Protocol, db.session, name='Protocols'))
 admin.add_view(ChartsView(name='Charts'))
-#admin.add_view(HelpView(name='Aide'))
+#TODO: need to translate this page
+#admin.add_view(HelpView(name='Help'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
