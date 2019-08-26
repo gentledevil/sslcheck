@@ -15,7 +15,7 @@ cssselect==0.9.1
 itsdangerous==0.23
 logilab-common==0.61.0
 lxml==3.3.5
-pyOpenSSL==0.14
+pyOpenSSL==17.5.0
 pycparser==2.10
 pygal==1.4.6
 six==1.6.1
