@@ -6,7 +6,7 @@ Jinja2==2.7.2
 MarkupSafe==0.19
 SQLAlchemy==0.9.3
 WTForms==1.0.5
-Werkzeug==0.9.4
+Werkzeug==0.15.3
 astroid==1.0.1
 cairocffi==0.5.4
 cffi==0.8.2
