@@ -1,3 +1,5 @@
+**Warning** This project is no longer maintained or supported.
+
 ## Description ##
 SSLCheck is a tool to check and report on SSL certificates validity. Give it a list of hosts and ports through the Web UI and it will produce alerts, charts and logs about which certificates are not properly setup, vulnerables or expire soon.
 
